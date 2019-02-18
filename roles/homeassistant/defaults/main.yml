@@ -1,0 +1,8 @@
+---
+homeassistant_packages:
+  - python3
+  - python3-dev
+  - build-base
+  - libffi-dev
+  - openssl-dev
+  - eudev-dev # needed by pyozw

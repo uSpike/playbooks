@@ -1,0 +1,4 @@
+---
+- hosts: ha
+  roles:
+    - homeassistant

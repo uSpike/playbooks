@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+
+description="Open-source home automation platform"
+
+user="ha:ha"
+
+stdoutlog="/var/log/appdaemon/stdout.log"
+serverlog="/var/log/appdaemon/server.log"
+
+start_stop_daemon_args="--user $user --stdout $stdoutlog --stderr $serverlog --retry 10"
+
+command="/srv/appdaemon/venv/bin/appdaemon"
+command_args="
+	--config /srv/appdaemon/config
+    ${APPDAEMON_OPTS}
+"
+
+command_background=yes
+pidfile=/run/appdaemon.pid
+
+depend() {
+    need homeassistant
+    after bootmisc
+}
+
+start_pre() {
+    checkpath --file --owner $user --mode 0644 $stdoutlog
+    checkpath --file --owner $user --mode 0644 $serverlog
+}

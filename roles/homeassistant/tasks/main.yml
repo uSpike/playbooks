@@ -1,0 +1,127 @@
+---
+- name: Install python3
+  raw: test -e /usr/bin/python3 || apk add -U python3
+  register: output
+  changed_when: output.stdout
+
+- name: Install packages
+  apk:
+    name: "{{ homeassistant_packages }}"
+    state: latest
+    update_cache: yes
+
+- name: Create ha user
+  command: adduser -D ha creates=/home/ha
+  register: added_user
+
+- name: Add ha user to dialout
+  command: adduser ha dialout
+  when: added_user.changed
+
+# homeassistant
+
+- name: Create /srv/homeassistant directory
+  file:
+    path: /srv/homeassistant
+    owner: ha
+    group: ha
+    state: directory
+
+- name: Create /var/log/homeassistant directory
+  file:
+    path: /var/log/homeassistant
+    state: directory
+    owner: ha
+
+- name: Template init.d/homeassistant
+  template:
+    src: homeassistant.init.d.j2
+    dest: /etc/init.d/homeassistant
+    mode: 0755
+  notify: restart homeassistant
+
+- name: Template conf.d/homeassistant
+  template:
+    src: homeassistant.conf.d.j2
+    dest: /etc/conf.d/homeassistant
+  notify: restart homeassistant
+
+- name: Template logrotate.d/homeassistant
+  template:
+    src: homeassistant.conf.d.j2
+    dest: /etc/logrotate.d/homeassistant
+  notify: restart homeassistant
+
+- name: Setup homeassistant directory
+  become: True
+  become_user: ha
+  block:
+  - name: Create virtualenv
+    command: python3 -m venv /srv/homeassistant/venv creates=/srv/homeassistant/venv
+
+  - name: Update pip
+    pip:
+      virtualenv: /srv/homeassistant/venv
+      name: pip
+      state: latest
+
+  - name: Install homeassistant
+    pip:
+      virtualenv: /srv/homeassistant/venv
+      name: homeassistant
+      state: latest
+    notify: restart homeassistant
+
+# Appdaemon
+
+- name: Create /srv/appdaemon directory
+  file:
+    path: /srv/appdaemon
+    owner: ha
+    group: ha
+    state: directory
+
+- name: Create /var/log/appdaemon directory
+  file:
+    path: /var/log/appdaemon
+    state: directory
+    owner: ha
+
+- name: Template init.d/appdaemon
+  template:
+    src: appdaemon.init.d.j2
+    dest: /etc/init.d/appdaemon
+    mode: 0755
+  notify: restart appdaemon
+
+- name: Template conf.d/appdaemon
+  template:
+    src: appdaemon.conf.d.j2
+    dest: /etc/conf.d/appdaemon
+  notify: restart appdaemon
+
+- name: Template logrotate.d/appdaemon
+  template:
+    src: appdaemon.conf.d.j2
+    dest: /etc/logrotate.d/appdaemon
+  notify: restart appdaemon
+
+- name: Setup appdaeomon directory
+  become: True
+  become_user: ha
+  block:
+  - name: Create virtualenv
+    command: python3 -m venv /srv/appdaemon/venv creates=/srv/appdaemon/venv
+
+  - name: Update pip
+    pip:
+      virtualenv: /srv/appdaemon/venv
+      name: pip
+      state: latest
+
+  - name: Install appdaemon
+    pip:
+      virtualenv: /srv/appdaemon/venv
+      name: appdaemon
+      state: latest
+    notify: restart appdaemon
